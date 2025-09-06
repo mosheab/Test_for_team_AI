@@ -1,0 +1,17 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE TABLE IF NOT EXISTS videos (
+  id UUID PRIMARY KEY,
+  filename TEXT NOT NULL,
+  duration_sec DOUBLE PRECISION,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS highlights (
+  id UUID PRIMARY KEY,
+  video_id UUID REFERENCES videos(id) ON DELETE CASCADE,
+  start_sec DOUBLE PRECISION NOT NULL,
+  end_sec DOUBLE PRECISION NOT NULL,
+  description TEXT,
+  summary TEXT,
+  embedding vector(384),
+  created_at TIMESTAMP DEFAULT NOW()
+);

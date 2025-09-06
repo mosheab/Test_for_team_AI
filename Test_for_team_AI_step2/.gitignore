@@ -1,0 +1,66 @@
+# --------------------------
+# Python compiled files
+# --------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+
+# --------------------------
+# Environment files
+# --------------------------
+.env
+
+# --------------------------
+# Virtual environment folders
+# --------------------------
+venv/
+.venv/
+env/
+
+# --------------------------
+# Windows / compiled binaries
+# --------------------------
+*.dll
+
+# --------------------------
+# Cython / type stub files
+# --------------------------
+*.pxd
+*.pyi
+
+# --------------------------
+# Logs and temporary files
+# --------------------------
+*.log
+*.tmp
+*.bak
+
+# --------------------------
+# IDE / editor files
+# --------------------------
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# --------------------------
+# Jupyter Notebook checkpoints
+# --------------------------
+.ipynb_checkpoints/
+
+# --------------------------
+# Optional: py.typed marker file
+# Only commit if you are publishing a typed library
+# --------------------------
+# py.typed
+
+# --------------------------
+# Node.js / frontend
+# --------------------------
+node_modules/
+dist/
+build/
+npm-debug.log
+yarn-error.log

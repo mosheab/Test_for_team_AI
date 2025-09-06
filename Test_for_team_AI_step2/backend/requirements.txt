@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+SQLAlchemy>=2.0
+pgvector
+psycopg2-binary
+python-dotenv
+sentence-transformers
+numpy

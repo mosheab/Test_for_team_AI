@@ -1,0 +1,18 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: videos
+      POSTGRES_USER: postgres    
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+  app:
+    build: .
+    env_file: .env
+    volumes:
+      - ./input_videos:/app/input_videos
+      - ./output:/app/output
+    depends_on: [db]
+    command: ["python","-m","app.demo","--input","input_videos"]

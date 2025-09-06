@@ -1,0 +1,20 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: backend/.env
+    ports:
+      - "8000:8000"
+    # On Linux (not Docker Desktop), uncomment so the container can reach host.docker.internal:
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "8080:8080"

@@ -1,0 +1,16 @@
+google-genai
+scenedetect
+opencv-python-headless
+torch
+torchvision
+faster-whisper
+sentence-transformers
+transformers
+numpy
+pandas
+psycopg2-binary
+SQLAlchemy>=2.0
+pgvector
+python-dotenv
+tqdm
+typer
