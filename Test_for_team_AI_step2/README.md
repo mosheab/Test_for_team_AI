@@ -1,7 +1,9 @@
 # Step 2 — Interactive Chat About Video Highlights
 
 **Backend:** FastAPI
+
 **Frontend:** React (Vite)
+
 **DB:** PostgreSQL + pgvector (re-uses the DB populated in **Step 1**)
 
 ## Run
@@ -13,17 +15,21 @@
 
 ## Chat Architecture
 U[User] --> UI[Frontend (React/Vite)]
-UI -->|POST /api/chat/ask| API[Backend (FastAPI)]
-API -->|Embed query| EMB[SentenceTransformer]
-API -->|Vector/Keyword search| DB[(Postgres + pgvector)]
-DB --> API
-API -->|Answer + Matches (JSON)| UI
 
-# UI: http://localhost:8080
-# Health: http://localhost:8000/health
-# Ask:
+UI -->|"POST /api/chat/ask"| API[Backend (FastAPI)]
+
+API -->|"Embed query"| EMB[SentenceTransformer]
+
+API -->|"Vector + keyword search"| DB[(Postgres + pgvector)]
+
+DB --> API
+
+API -->|"Answer + Matches (JSON)"| UI
+
+### Query:
 curl -X POST http://localhost:8000/api/chat/ask \ 
 -H "Content-Type: application/json" \
 -d '{"query":"What occurred in the videos?","top_k":5}'
 
-Make sure your DB already has data from Step 1 (tables created here if missing).
+
+** Make sure your DB already has data from Step 1 (tables created here if missing).
