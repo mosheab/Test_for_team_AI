@@ -32,4 +32,4 @@ curl -X POST http://localhost:8000/api/chat/ask \
 -d '{"query":"What occurred in the videos?","top_k":5}'
 
 
-** Make sure your DB already has data from Step 1 (tables created here if missing).
+** Make sure your DB already has data from Step 1. **
