@@ -68,8 +68,7 @@ def select_action(policy, board, player, epsilon=0.0):
     mask = torch.tensor([0.0 if v==0 else -1e9 for v in b], dtype=torch.float32)
     masked_logits = logits + mask
     
-    # ε-random exploration: choose a legal move uniformly; don't backpropagate it
-    import random
+    # ε-random exploration, don't backpropagate it.
     if epsilon > 0.0 and random.random() < epsilon:
         moves = [i for i, v in enumerate(b) if v == 0]
         if not moves: 
