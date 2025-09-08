@@ -77,7 +77,6 @@ def select_action(policy, board, player, epsilon=0.0):
         a = random.choice(moves)
         return a, None  # <-- DO NOT reinforce random picks
 
-    # From the policy: eval = greedy; training = sample for unbiased PG
     probs = torch.softmax(masked_logits, dim=-1)
 
     if epsilon == 0.0:
