@@ -7,15 +7,10 @@ This package includes:
 - `ttt_model.pt` — starter weights (train more for a stronger Hard)
 
 ## Run
-```bash
-python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install torch numpy matplotlib
 python play_tk.py
-```
 
 ## Train
-```bash
 python train.py --opponent random    --episodes 2000 --out ttt_model.pt
 python train.py --opponent heuristic --episodes 3000 --out ttt_model.pt
-python train.py --opponent self      --episodes 2000 --snapshot_every 300 --out ttt_model.pt
-```
+python train.py --opponent self      --episodes 2000 --snapshot_every 200 --out ttt_model.pt
+
