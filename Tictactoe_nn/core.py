@@ -49,12 +49,10 @@ def heuristic_move(board, player):
     return random.choice(moves) if moves else None
 
 class PolicyNet(nn.Module):
-    def __init__(self, in_dim=18, hidden=64, out_dim=9):
+    def __init__(self, in_dim=18, hidden=32, out_dim=9):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(in_dim, hidden),
-            nn.ReLU(),
-            nn.Linear(hidden, hidden),
             nn.ReLU(),
             nn.Linear(hidden, out_dim),
         )
@@ -68,15 +66,9 @@ def select_action(policy, board, player, epsilon=0.0):
     mask = torch.tensor([0.0 if v==0 else -1e9 for v in b], dtype=torch.float32)
     masked_logits = logits + mask
     
-    # ε-random exploration, don't backpropagate it.
-    if epsilon > 0.0 and random.random() < epsilon:
-        moves = [i for i, v in enumerate(b) if v == 0]
-        if not moves: 
-            return None, None
-        a = random.choice(moves)
-        return a, None  # <-- DO NOT reinforce random picks
-
-    probs = torch.softmax(masked_logits, dim=-1)
+    # higher epsilon = more random
+    factor = max(0.1, epsilon)
+    probs = torch.softmax(masked_logits / factor, dim=-1)
 
     if epsilon == 0.0:
         # evaluation/GUI
