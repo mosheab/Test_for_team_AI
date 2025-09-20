@@ -49,10 +49,16 @@ def heuristic_move(board, player):
     return random.choice(moves) if moves else None
 
 class PolicyNet(nn.Module):
-    def __init__(self, in_dim=18, hidden=32, out_dim=9):
+    def __init__(self, in_dim=18, hidden=256, out_dim=9):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(in_dim, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
             nn.ReLU(),
             nn.Linear(hidden, out_dim),
         )

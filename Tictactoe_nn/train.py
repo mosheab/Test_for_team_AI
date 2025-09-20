@@ -1,167 +1,167 @@
-import argparse, json, random
-import torch, torch.optim as optim
+import argparse, json, os
+from collections import deque
+from functools import lru_cache
+
+import torch
+import torch.optim as optim
 import matplotlib.pyplot as plt
-import os
-from core import PolicyNet, select_action, heuristic_move, check_winner, WIN_LINES
+import numpy as np
 
-def legal_moves(board): return [i for i,v in enumerate(board) if v==0]
+from core import PolicyNet, check_winner, encode_state
+
+def legal_moves(board): 
+    return [i for i,v in enumerate(board) if v == 0]
+
+def _to_move_from_board(board):
+    x = sum(1 for v in board if v==1)
+    o = sum(1 for v in board if v==-1)
+    return 1 if x == o else -1
+
+@lru_cache(maxsize=None)
+def _minimax_score(state_tuple, player):
+    """
+    Return best outcome for 'player' on 'state_tuple':
+      +1 win, 0 draw, -1 loss
+    """
+    b = list(state_tuple)
+    term = check_winner(b)
+    if term is not None:
+        return 0 if term == 0 else (1 if term == player else -1)
+
+    best = -2
+    for a in legal_moves(b):
+        b[a] = player
+        s = -_minimax_score(tuple(b), -player)
+        b[a] = 0
+        if s > best:
+            best = s
+            if best == 1:
+                break
+    return best
+
+def optimal_moves_minimax(board, player):
+    """(optimal_actions, best_score) for 'player' on 'board'."""
+    best, acts = -2, []
+    for a in legal_moves(board):
+        board[a] = player
+        s = -_minimax_score(tuple(board), -player)
+        board[a] = 0
+        if s > best:
+            best, acts = s, [a]
+        elif s == best:
+            acts.append(a)
+    return acts, best
+
+def generate_all_positions():
+    seen = set()
+    q = deque([[0]*9])
+    out = []
+    while q:
+        b = q.popleft()
+        key = tuple(b)
+        if key in seen: 
+            continue
+        seen.add(key)
+        out.append(b[:])
+
+        if check_winner(b) is not None:
+            continue
+        to = _to_move_from_board(b)
+        for a in legal_moves(b):
+            b[a] = to
+            q.append(b[:])
+            b[a] = 0
+    return out
+
+# ---------- Build supervised dataset ----------
+def build_dataset():
+    boards = generate_all_positions()
+    # X: [18], Y: distribution over optimal legal moves
+    X_list, Y_list = [], []
+
+    for b in boards:
+        if check_winner(b) is not None:
+            continue
+        to = _to_move_from_board(b)
+        bb = b[:] if to == 1 else [-v for v in b]  # flip so +1 is side-to-move
+
+        opts, _ = optimal_moves_minimax(bb, 1)
+        if not opts:
+            continue
+
+        x = encode_state(bb)                      # np.ndarray shape (18,)
+        y = np.zeros(9, dtype=np.float32)         # np.ndarray shape (9,)
+        w = 1.0 / len(opts)
+        for a in opts:
+            y[a] = w
+
+        X_list.append(x)
+        Y_list.append(y)
+
+    X = torch.from_numpy(np.asarray(X_list, dtype=np.float32))  # shape [N, 18]
+    Y = torch.from_numpy(np.asarray(Y_list, dtype=np.float32))  # shape [N, 9]
+    return X, Y
 
 
-def has_two_in_row_threat(board, player):
-    for a,b,c in WIN_LINES:
-        line = [board[a], board[b], board[c]]
-        if line.count(player) == 2 and line.count(0) == 1:
-            return True
-    return False
+def train(epochs=12, batch_size=256, lr=1e-3, out='ttt_model.pt',
+                     log_every=1, plot_loss='loss_curve.png'):
+    X, Y = build_dataset()
+    print(json.dumps({"dataset_size": int(X.size(0))}))
 
-def opponent_can_win_next(board, player):
-    opp = -player
-    for m in legal_moves(board):
-        b2 = board[:]
-        b2[m] = opp
-        if check_winner(b2) == opp:
-            return True
-    return False
-
-def play_episode(policy, opponent='random', snapshot=None, epsilon=0.1, agent_player=1):
-    board = [0]*9; 
-    log_probs = []
-    shaped_total = 0.0
-    to_move = 1
-    while True:
-        term = check_winner(board)
-        if term is not None:
-            reward = 1.0 if term==agent_player else (-1.0 if term==-agent_player else 0.0)
-            # small penalty on losing terminal
-            if term == -agent_player:
-                shaped_total += -0.1
-            return reward, shaped_total, log_probs
- 
-        if to_move == agent_player:
-            a, logp = select_action(policy, board, player=agent_player, epsilon=epsilon)
-            if a is None: return 0.0, log_probs
-            board[a] = agent_player
-            if logp is not None:
-                log_probs.append(logp)
-            # +0.2 if agent created a two-in-a-row threat
-            if has_two_in_row_threat(board, agent_player):
-                shaped_total += 0.2
-            # -0.2 if opponent now has an immediate winning reply
-            if opponent_can_win_next(board, agent_player):
-                shaped_total += -0.2
-            # +0.1 for staying alive (game not ended yet)
-            if check_winner(board) is None:
-                shaped_total += 0.1
-        else:
-            if opponent=='random':
-                moves = legal_moves(board)
-                a = None if not moves else random.choice(moves)
-            elif opponent=='heuristic':
-                a = heuristic_move(board, player=to_move)
-            else:
-                a, _ = select_action(snapshot, board, player=to_move, epsilon=0.0)
-            if a is None: return 0.0, 0.0, log_probs
-            board[a] = to_move
-        to_move *= -1
-
-
-def train(episodes=10000, opponent='random', lr=1e-3, epsilon=1.0,
-          snapshot_every=200, log_every=200, window=200, seed=0, out='ttt_model.pt'):
-    random.seed(seed)
-    torch.manual_seed(seed)
-    policy = PolicyNet()
+    model = PolicyNet()
     if os.path.exists(out):
         try:
-            policy.load_state_dict(torch.load(out, map_location="cpu"))
+            model.load_state_dict(torch.load(out, map_location='cpu'))
             print(json.dumps({"resumed_from": out}))
         except Exception as e:
             print(json.dumps({"resume_failed": str(e)}))
-    opt = optim.Adam(policy.parameters(), lr=lr)
 
-    baseline = {1: 0.0, -1: 0.0}
-    beta = 0.9
+    opt = optim.Adam(model.parameters(), lr=lr)
+    losses = []
 
-    snapshot = PolicyNet()
-    snapshot.load_state_dict(policy.state_dict())
-    snapshot.eval()
-
-    losses, rewards = [], []
-    for ep in range(1, episodes+1):
-        if opponent=='self' and ep % snapshot_every == 1 and ep > 1:
-            snapshot.load_state_dict(policy.state_dict())
-            snapshot.eval()
-
-        # ε-decay: start random (high temp), cool down
-        min_eps = 0.1
-        eps_now = max(min_eps, epsilon * (1.0 - ep / episodes))
-        agent_player = 1 if random.random() < 0.5 else -1
-
-        r_raw, r_shaped, logs = play_episode(policy, opponent=opponent, snapshot=snapshot,
-                               epsilon=eps_now, agent_player=agent_player)
-
-        # Use shaped reward for learning signal
-        baseline[agent_player] = beta * baseline[agent_player] + (1 - beta) * r_shaped
-        adv = r_shaped - baseline[agent_player]
-
-        if logs:
-            loss = -torch.stack(logs).sum() * adv
+    for ep in range(1, epochs+1):
+        idx = torch.randperm(X.size(0))
+        total = 0.0
+        for i in range(0, X.size(0), batch_size):
+            xb = X[idx[i:i+batch_size]]
+            yb = Y[idx[i:i+batch_size]]
+            logits = model(xb)
+            probs = torch.softmax(logits, dim=-1)
+            loss = -(yb * torch.log(probs + 1e-12)).sum(dim=1).mean()
             opt.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(policy.parameters(), 1.0)
             opt.step()
-        else:
-            loss = torch.tensor(0.0)
-
-        losses.append(loss.item())
-        # Keep raw outcomes for accurate draw-rate reporting
-        rewards.append(r_raw)
-
+            total += float(loss.item()) * xb.size(0)
+        avg = total / X.size(0)
+        losses.append(avg)
         if ep % log_every == 0 or ep == 1:
-            recent = rewards[-window:]
-            draw_rate = sum(1 for x in recent if x == 0) / max(1, len(recent))
-            print(json.dumps({
-                "episode": ep,
-                "loss": float(loss.item()),
-                "draw_rate": draw_rate
-            }))
+            print(json.dumps({"epoch": ep, "loss": avg}))
 
-    torch.save(policy.state_dict(), out)
-    print(json.dumps({'out': out, 'episodes': episodes}))
-                     
+    torch.save(model.state_dict(), out)
+    print(json.dumps({"saved": out, "epochs": epochs}))
 
-    # optimal game finishes with a draw
-    draw_list = []
-    for i in range(episodes):
-        sub = rewards[max(0, i-window+1):i+1]
-        draw_list.append(sum(1 for x in sub if x==0)/max(1,len(sub)))
-
+    # Plot loss
     plt.figure()
     plt.plot(losses)
-    plt.title("Training Loss (REINFORCE)")
-    plt.xlabel("Episode"); plt.ylabel("Loss"); plt.tight_layout()
-    plt.savefig("loss_curve.png")
-    plt.close()
-
-    plt.figure()
-    plt.plot(draw_list)
-    plt.title(f"Rolling Draw Rate (window={window})")
-    plt.xlabel("Episode"); plt.ylabel("Draw Rate"); plt.tight_layout()
-    plt.savefig("drawrate_curve.png")
+    plt.xlabel("Epoch")
+    plt.ylabel("Cross Entropy Loss")
+    plt.title("Training Loss")
+    plt.tight_layout()
+    plt.savefig(plot_loss)
     plt.close()
 
 
 if __name__ == '__main__':
-    p=argparse.ArgumentParser()
-    p.add_argument('--episodes', type=int, default=10000)
-    p.add_argument('--opponent', choices=['random','heuristic','self'], default='self')
+    p = argparse.ArgumentParser()
+    p.add_argument('--epochs', type=int, default=2000)
+    p.add_argument('--batch_size', type=int, default=256)
     p.add_argument('--lr', type=float, default=1e-3)
-    p.add_argument('--epsilon', type=float, default=1)
-    p.add_argument('--snapshot_every', type=int, default=200)
-    p.add_argument('--log_every', type=int, default=50)
-    p.add_argument('--window', type=int, default=100)
-    p.add_argument('--seed', type=int, default=0)
     p.add_argument('--out', type=str, default='ttt_model.pt')
-    a=p.parse_args()
-    train(episodes=a.episodes, opponent=a.opponent, lr=a.lr, epsilon=a.epsilon,
-          snapshot_every=a.snapshot_every, log_every=a.log_every, window=a.window, 
-          seed=a.seed, out=a.out)
+    p.add_argument('--log_every', type=int, default=1)
+    args = p.parse_args()
+
+    train(epochs=args.epochs,
+          batch_size=args.batch_size,
+          lr=args.lr,
+          out=args.out,
+          log_every=args.log_every)
