@@ -6,7 +6,7 @@ app = typer.Typer()
 
 @app.command()
 def main(input: str = typer.Option("input_videos", help="Folder or video file"),
-         scene_threshold: int = typer.Option(int(os.getenv("SCENE_THRESHOLD","5")))):
+         max_highlights: int = typer.Option(int(os.getenv("MAX_HIGHLIGHTS","5")))):
     load_dotenv()
     proc = VideoProcessor()
     paths = []
@@ -22,7 +22,7 @@ def main(input: str = typer.Option("input_videos", help="Folder or video file"),
     for p in paths[:10]:
         typer.echo(f"Processing: {p}")
         try:
-            result = proc.process(p, scene_threshold=scene_threshold)
+            result = proc.process(p, max_highlights=max_highlights)
             typer.echo(f"Done: {result['filename']} → {len(result['highlights'])} highlights")
         except Exception as e:
             typer.echo(f"Error: {e}")

@@ -10,8 +10,8 @@ class Video(Base):
     __tablename__="videos"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     filename = Column(String, nullable=False)
-    duration_sec = Column(Float)
-    created_at = Column(TIMESTAMP)
+    duration_sec = Column(Float, nullable=True)
+    created_at = Column(TIMESTAMP, nullable=True)
     highlights = relationship("Highlight", back_populates="video")
     
 class Highlight(Base):
@@ -20,8 +20,8 @@ class Highlight(Base):
     video_id = Column(UUID(as_uuid=True), ForeignKey("videos.id", ondelete="CASCADE"), nullable=False)
     start_sec = Column(Float, nullable=False)
     end_sec = Column(Float, nullable=False)
-    description = Column(Text)
-    summary = Column(Text)
-    embedding = Column(Vector(384))
-    created_at = Column(TIMESTAMP)
+    title = Column(Text, nullable=False)
+    summary = Column(Text, nullable=False)
+    embedding = Column(Vector(384), nullable=False)
+    created_at = Column(TIMESTAMP, nullable=True)
     video = relationship("Video", back_populates="highlights")

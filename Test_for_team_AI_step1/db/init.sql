@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS highlights (
   video_id UUID REFERENCES videos(id) ON DELETE CASCADE,
   start_sec DOUBLE PRECISION NOT NULL,
   end_sec DOUBLE PRECISION NOT NULL,
-  description TEXT,
-  summary TEXT,
-  embedding vector(384),
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  embedding vector(384) NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );

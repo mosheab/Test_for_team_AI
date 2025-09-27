@@ -6,8 +6,8 @@ def create_video(db: Session, filename: str, duration_sec: float | None) -> Vide
     v = Video(filename=filename, duration_sec=duration_sec)
     db.add(v); db.commit(); db.refresh(v); return v
 
-def add_highlight(db: Session, video_id, start_sec: float, end_sec: float, description: str, summary: str, embedding):
-    h = Highlight(video_id=video_id, start_sec=start_sec, end_sec=end_sec, description=description, summary=summary, embedding=embedding)
+def add_highlight(db: Session, video_id, start_sec: float, end_sec: float, title: str, summary: str, embedding):
+    h = Highlight(video_id=video_id, start_sec=start_sec, end_sec=end_sec, title=title, summary=summary, embedding=embedding)
     db.add(h); db.commit(); db.refresh(h); return h
 
 def list_highlights(db: Session, video_id) -> List[Highlight]:

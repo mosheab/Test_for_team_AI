@@ -42,7 +42,7 @@ export default function App() {
           <h3>Matches</h3>
           <ul>{matches.map((m)=>(
             <li key={m.id} style={{ marginBottom:8 }}>
-              <code>{m.filename}</code> [{sec(m.start_sec)}–{sec(m.end_sec)}] — {m.summary || m.description}
+              <code>{m.filename}</code> [{sec(m.start_sec)}–{sec(m.end_sec)}] — {m.summary || m.title}
             </li>
           ))}</ul>
         </div>

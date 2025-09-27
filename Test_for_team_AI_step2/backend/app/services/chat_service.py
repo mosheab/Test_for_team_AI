@@ -19,17 +19,17 @@ def answer_query(db: Session, query: str, top_k: int | None = None) -> Dict[str,
             matches.append({
                 "id": str(r.get("id")), "video_id": str(r.get("video_id")), "filename": r.get("filename"),
                 "start_sec": float(r.get("start_sec")), "end_sec": float(r.get("end_sec")),
-                "summary": r.get("summary") or "", "description": r.get("description") or ""
+                "summary": r.get("summary"), "title": r.get("title")
             })
     if mode in ("keyword","hybrid"):
         for h, v in search_by_keywords(db, query, top_k=top_k):
             matches.append({
                 "id": str(h.id), "video_id": str(h.video_id), "filename": v.filename,
                 "start_sec": float(h.start_sec), "end_sec": float(h.end_sec),
-                "summary": h.summary or "", "description": h.description or ""
+                "summary": h.summary, "title": h.title
             })
     if not matches:
-        return {"answer":"I couldn’t find any highlights matching your question in the database.","matches":[]}
+        return {"answer":"I couldn't find any highlights matching your question in the database.","matches":[]}
     seen = set()
     unique_matches = []
     for m in matches:
@@ -41,6 +41,6 @@ def answer_query(db: Session, query: str, top_k: int | None = None) -> Dict[str,
     bullets = []
     for m in unique_matches:
         span = f"{sec_to_timestamp(m['start_sec'])}-{sec_to_timestamp(m['end_sec'])}"
-        txt = m['summary'] or m['description'] or "(no summary)"
+        txt = m['summary'] or m['title'] or "(no summary)"
         bullets.append(f"• {m['filename']} [{span}]: {txt}")
     return {"answer":"", "matches": unique_matches}

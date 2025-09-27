@@ -6,7 +6,7 @@ def search_by_keywords(db: Session, query: str, top_k: int = 5):
     q = f"%{query.lower()}%"
     stmt = (select(Highlight, Video)
             .join(Video, Highlight.video_id==Video.id)
-            .where((Highlight.summary.ilike(q)) | (Highlight.description.ilike(q)))
+            .where((Highlight.summary.ilike(q)) | (Highlight.title.ilike(q)))
             .order_by(Highlight.start_sec.asc())
             .limit(top_k))
     return list(db.execute(stmt).all())
