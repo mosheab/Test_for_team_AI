@@ -6,7 +6,7 @@ app = typer.Typer()
 
 @app.command()
 def main(input: str = typer.Option("input_videos", help="Folder or video file"),
-         max_highlights: int = typer.Option(int(os.getenv("MAX_HIGHLIGHTS","5")))):
+         max_highlights: int = typer.Option(int(os.getenv("MAX_HIGHLIGHTS","10")))):
     load_dotenv()
     proc = VideoProcessor()
     paths = []

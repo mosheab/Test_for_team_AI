@@ -15,7 +15,7 @@ export default function App() {
       const res = await fetch(`${API_BASE}/chat/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, top_k: 5 })
+        body: JSON.stringify({ query, top_k: 10 })
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
@@ -29,7 +29,7 @@ export default function App() {
       <h1>Video Highlight Chat</h1>
       <form onSubmit={ask} style={{ display: 'flex', gap: 8 }}>
         <input value={query} onChange={(e)=>setQuery(e.target.value)}
-               placeholder="Ask about the videos (e.g., What occurred in the videos?)"
+               placeholder="Ask about the videos (e.g., How long was the launch countdown?)"
                style={{ flex: 1, padding: 10, fontSize: 16 }} />
         <button disabled={loading || !query.trim()} style={{ padding: '10px 16px' }}>
           {loading ? 'Searching…' : 'Ask'}
@@ -42,7 +42,7 @@ export default function App() {
           <h3>Matches</h3>
           <ul>{matches.map((m)=>(
             <li key={m.id} style={{ marginBottom:8 }}>
-              <code>{m.filename}</code> [{sec(m.start_sec)}–{sec(m.end_sec)}] — {m.summary || m.title}
+              <code>{m.filename}</code> [{sec(m.start_sec)}-{sec(m.end_sec)}] — {m.summary || m.title}
             </li>
           ))}</ul>
         </div>

@@ -29,7 +29,7 @@ API -->|"Answer + Matches (JSON)"| UI
 ### Query:
 curl -X POST http://localhost:8000/api/chat/ask \ 
 -H "Content-Type: application/json" \
--d '{"query":"What occurred in the videos?","top_k":5}'
+-d '{"query":"How long was the launch countdown?","top_k":10}'
 
 
 ** Make sure your DB already has data from Step 1. **

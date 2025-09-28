@@ -23,7 +23,7 @@ class VideoProcessor:
         self.db = db or SessionLocal()
         self.embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-    def process(self, video_path: str, max_highlights: int = 5) -> Dict:
+    def process(self, video_path: str, max_highlights: int = 10) -> Dict:
         filename = os.path.basename(video_path)
         duration = _video_duration_seconds(video_path)
         video = create_video(self.db, filename=filename, duration_sec=duration)
@@ -35,8 +35,8 @@ class VideoProcessor:
             end   = float(item.get("end_s",   item.get("end",   start)))
             title = str(item.get("title", "")).strip()
             summary = str(item.get("summary", "")).strip()
-
-            vec = self.embedder.encode(summary).tolist()
+            text_for_embed = f"{title}. {summary}"
+            vec = self.embedder.encode(text_for_embed).tolist()
             add_highlight(
                 self.db,
                 video_id=video.id,

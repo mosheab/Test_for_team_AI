@@ -19,7 +19,7 @@ schema = {
   }
 }
 
-def llm_summarize_video(filename: str, max_highlights: int = 5) -> Dict[str, Any]:
+def llm_summarize_video(filename: str, max_highlights: int = 10) -> Dict[str, Any]:
 
     def _wait_file_active(file, timeout_s: float = 60.0, poll_s: float = 0.5):
         start = time.time()
